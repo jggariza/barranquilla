@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-sora);
+  --default-font-family: var(--font-sora);
+}
+
+html {
+  scroll-behavior: auto;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+::selection {
+  background: rgba(0, 0, 0, 0.15);
+  color: black;
+}
