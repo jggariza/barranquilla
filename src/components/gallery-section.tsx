@@ -30,8 +30,6 @@ export default function GallerySection({
   const [activeImage, setActiveImage] = useState(0);
   const hasMultipleImages = item.images.length > 1;
 
-  // Alternate: even sections are "background" (sticky, lower z),
-  // odd sections slide over them (higher z)
   const isBackground = index % 3 === 1;
 
   const handleToggle = useCallback(
@@ -66,7 +64,6 @@ export default function GallerySection({
 
     const ctx = gsap.context(() => {
       if (isBackground) {
-        // "Background" sections: image stays pinned, next section slides over
         ScrollTrigger.create({
           trigger: section,
           start: "top top",
@@ -90,7 +87,6 @@ export default function GallerySection({
           }
         );
       } else {
-        // Regular sections: parallax movement
         gsap.fromTo(
           imageWrap,
           { yPercent: -10 },
@@ -106,7 +102,6 @@ export default function GallerySection({
           }
         );
 
-        // Scale reveal
         gsap.fromTo(
           imageWrap,
           { scale: 1.08, opacity: 0 },
@@ -124,37 +119,21 @@ export default function GallerySection({
         );
       }
 
-      // Content animations
+      // Content reveal
       const elements = content.querySelectorAll("[data-anim]");
       gsap.fromTo(
         elements,
-        { y: 60, opacity: 0 },
+        { y: 40, opacity: 0 },
         {
           y: 0,
           opacity: 1,
-          stagger: 0.08,
+          stagger: 0.06,
           ease: "power3.out",
           scrollTrigger: {
-            trigger: content,
-            start: "top 88%",
-            end: "top 40%",
-            scrub: 1.0,
-          },
-        }
-      );
-
-      // Content parallax (moves at different speed)
-      gsap.fromTo(
-        content,
-        { yPercent: 5 },
-        {
-          yPercent: -15,
-          ease: "none",
-          scrollTrigger: {
             trigger: section,
-            start: "top bottom",
-            end: "bottom top",
-            scrub: 1.5,
+            start: "top 60%",
+            end: "top 10%",
+            scrub: 0.8,
           },
         }
       );
@@ -166,13 +145,10 @@ export default function GallerySection({
   return (
     <section
       ref={sectionRef}
-      className="relative w-full"
-      style={{
-        zIndex: isBackground ? 1 : total - index + 2,
-        marginTop: isBackground ? 0 : "-5vh",
-      }}
+      className="relative isolate w-full"
+      style={{ zIndex: isBackground ? 1 : total - index + 2 }}
     >
-      {/* Image — full bleed for background sections, slightly inset for others */}
+      {/* Image container — clips its own content */}
       <div
         ref={imageWrapRef}
         className={`relative overflow-hidden ${
@@ -203,105 +179,92 @@ export default function GallerySection({
             </div>
           ))}
         </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
-        {/* Gradient for text legibility */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-      </div>
-
-      {/* Content overlays bottom of image */}
-      <div
-        ref={contentRef}
-        className={`relative z-10 ${
-          isBackground
-            ? "mx-auto -mt-[30vh] w-[90vw] px-4 md:px-8"
-            : "mx-auto -mt-[25vh] w-[90vw] px-4 md:w-[85vw] md:px-8"
-        } pb-[15vh]`}
-      >
-        <div className="flex items-end justify-between">
-          <div>
-            <span
-              data-anim
-              className="mb-3 inline-block text-[10px] font-semibold uppercase tracking-[0.3em] text-white/60"
-            >
-              {item.location}
-            </span>
-            <h2
-              data-anim
-              className="text-4xl font-semibold tracking-tight text-white md:text-6xl lg:text-7xl"
-            >
-              {item.title}
-            </h2>
-            <p
-              data-anim
-              className="mt-4 max-w-md text-sm leading-relaxed text-white/70 md:text-base"
-            >
-              {item.shortDesc}{" "}
-              {onReadMore && (
-                <button
-                  onClick={() => onReadMore(item)}
-                  className="inline text-white/90 underline underline-offset-2 decoration-white/30 transition-colors hover:decoration-white/70"
-                >
-                  Leer más
-                </button>
-              )}
-            </p>
-            <p
-              data-anim
-              className="mt-2 text-[11px] tracking-wide text-white/40"
-            >
-              {item.address}
-            </p>
-          </div>
-
-          <div data-anim className="hidden md:block">
-            <span className="text-[11px] font-medium uppercase tracking-[0.2em] text-white/30">
-              {String(index + 1).padStart(2, "0")}
-            </span>
-          </div>
-        </div>
-
-        {/* Controls */}
-        <div data-anim className="mt-6 flex items-center gap-4">
-          {hasMultipleImages && (
-            <div className="flex items-center gap-2">
-              {item.images.map((img, i) => (
-                <button
-                  key={i}
-                  onClick={() => handleToggle(i)}
-                  className={`rounded-full px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.15em] transition-all duration-300 ${
-                    i === activeImage
-                      ? "bg-white text-black shadow-lg shadow-white/10"
-                      : "border border-white/25 text-white/50 hover:border-white/60 hover:text-white"
-                  }`}
-                >
-                  {img.label || img.year}
-                </button>
-              ))}
-            </div>
-          )}
-
-          <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-white/30">
-            {item.images[activeImage].year}
+        {/* Content — inside image, anchored at bottom */}
+        <div
+          ref={contentRef}
+          className="absolute inset-x-0 bottom-0 z-10 px-6 pb-8 md:px-12 md:pb-12"
+        >
+          <span
+            data-anim
+            className="mb-3 inline-block text-[10px] font-semibold uppercase tracking-[0.3em] text-white/60"
+          >
+            {item.location}
           </span>
-
-          {item.hasDetailModal && onOpenModal && (
-            <button
-              onClick={() => onOpenModal(item)}
-              className="ml-auto flex items-center gap-2 rounded-full border border-white/15 px-5 py-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-white/60 transition-all duration-300 hover:border-white/50 hover:text-white"
-            >
-              <span>Ver más</span>
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
+          <h2
+            data-anim
+            className="text-4xl font-semibold tracking-tight text-white md:text-6xl lg:text-7xl"
+          >
+            {item.title}
+          </h2>
+          <p
+            data-anim
+            className="mt-4 max-w-md text-sm leading-relaxed text-white/70 md:text-base"
+          >
+            {item.shortDesc}{" "}
+            {onReadMore && (
+              <button
+                onClick={() => onReadMore(item)}
+                className="inline text-white/90 underline underline-offset-2 decoration-white/30 transition-colors hover:decoration-white/70"
               >
-                <path d="M7 17L17 7M17 7H7M17 7V17" />
-              </svg>
-            </button>
-          )}
+                Leer más
+              </button>
+            )}
+          </p>
+          <p
+            data-anim
+            className="mt-2 text-[11px] tracking-wide text-white/40"
+          >
+            {item.address}
+          </p>
+
+          <div data-anim className="mt-5 flex items-center gap-4">
+            {hasMultipleImages && (
+              <div className="flex items-center gap-2">
+                {item.images.map((img, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleToggle(i)}
+                    className={`rounded-full px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.15em] transition-all duration-300 ${
+                      i === activeImage
+                        ? "bg-white text-black shadow-lg shadow-white/10"
+                        : "border border-white/25 text-white/50 hover:border-white/60 hover:text-white"
+                    }`}
+                  >
+                    {img.label || img.year}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-white/30">
+              {item.images[activeImage].year}
+            </span>
+
+            {item.hasDetailModal && onOpenModal && (
+              <button
+                onClick={() => onOpenModal(item)}
+                className="ml-auto flex items-center gap-2 rounded-full border border-white/15 px-5 py-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-white/60 transition-all duration-300 hover:border-white/50 hover:text-white"
+              >
+                <span>Ver más</span>
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M7 17L17 7M17 7H7M17 7V17" />
+                </svg>
+              </button>
+            )}
+          </div>
+
+          <div className="absolute right-6 top-1/2 -translate-y-1/2 hidden text-[11px] font-medium uppercase tracking-[0.2em] text-white/30 md:block [writing-mode:vertical-rl]">
+            {String(index + 1).padStart(2, "0")}
+          </div>
         </div>
       </div>
     </section>
